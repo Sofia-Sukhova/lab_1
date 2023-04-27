@@ -1,5 +1,6 @@
-double t_max = 0.5;
-double x_max = 0.6;
+#include <stdio.h>
+double t_max = 0.1;
+double x_max = 0.1;
 double t_step = 0.01;
 double x_step = 0.01;
 
@@ -25,13 +26,14 @@ double *sceme_realization(double *u, int k, int m){
     int K = (int)(t_max/t_step);
     int M = (int)(x_max/x_step);
     if (m == 0){
-        u[m + (k + 1) * K] = ksi( (k + 1) * t_step);
+        u[m + (k + 1) * M] = ksi( (k + 1) * t_step);
+    } else{
+        if ((k == 0) || (m == M - 1)){
+                u[(k + 1) * M + m] = func(t_step * k, x_step * m) * t_step + u[k * M + m] - t_step * (u[k * M + m] - u[k * M + m - 1]) / x_step;
+            } else{
+                u[(k + 1) * M + m ] = 2 * func(t_step * k, x_step * m) * t_step + u[(k - 1) * M + m] - t_step * (u[k * M + m + 1] - u[k * M + m - 1]) / x_step;
+            }
     }
-    if ((k == 0) || (m == M - 1)){
-        u[m + (k + 1) * K] = func(t_step * k, x_step * m) * t_step - u[k * K + m] - t_step * (u[k * K + m] - u[k * K + m - 1]) / x_step;
-    }
-    u[(k + 1) * K + m ] = func(t_step * k, x_step * m) * t_step + u[(k - 1) * K + m] - t_step * (u[k * K + m + 1] - u[k * K + m - 1]) / x_step;
-
     return u;
 }
 
