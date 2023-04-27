@@ -32,7 +32,7 @@ int main( int argc, char **argv ){
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
     double *u;
-    u = calloc(K * M + 10, sizeof(double));
+    u = calloc(K * M, sizeof(double));
 
     for (m = 0; m < M; m++){
         u[m] = fi(m * x_step);
@@ -45,40 +45,33 @@ int main( int argc, char **argv ){
         for (k = 0; k < K - 1; k ++){
             for (m = rank * num; m < M; m++){
                 if (m == num * rank){
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank - 1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank - 1, k, MPI_COMM_WORLD, &status);
+                    // printf("I, rank = %d receive from rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k, m - 1);
                     u[k * M + m - 1] = tmp;
                 }
 
                 u = sceme_realization(u, k, m);
 
-                if (m == num * rank){
-                    tmp = u[k * M + m];
-                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv);
+                if ((m == num * rank)&&(k != K - 1)){
+                    tmp = u[(k + 1) * M + m];
+                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank - 1, k + 1, MPI_COMM_WORLD, &recv);
+                    // printf("I, rank = %d send to rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k + 1, m);
                 }
             }
         }  
 
         // match all matrix together and put to the file
         for(i = 0; i < commsize - 1; i++){
-            double *uTMP = calloc(K * M + 10, sizeof(double));
+            double *uTMP = calloc(K * M, sizeof(double));
 
-            // MPI_Recv(uTMP, K * M, MPI_DOUBLE, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-            MPI_Recv(uTMP, K * num, MPI_DOUBLE, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-
-            printf("here i am, rank = %d\n", i);
+            MPI_Recv(uTMP, K * M, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
 
             for (k = 0; k < K; k++){
-                for(m = 0; m < M; m ++){
-                    printf("%f ", uTMP[k * M + m]);
+                for(m = i * num; m < (i + 1)*num; m++){
+                    u[k * M + m] = uTMP[k * M + m];
                 }
-                printf("\n");
             }
 
-            for (k = 0; k < K; k++){
-                for(m = 0; m < num; m++){
-                    u[k * M + m + i * num] = uTMP[k * num + m];
-                }
-            }
             free(uTMP);
         }
 
@@ -88,58 +81,64 @@ int main( int argc, char **argv ){
                 fprintf(output, "%lf\t%lf\t%lf\n", i * t_step, x_step * j, u[i * M  + j]);
             }
         } 
+
+        // for (k = 0; k < K; k++){
+        //     for(m = 0; m < M; m ++){
+        //         printf("%f ", u[k * M + m]);
+        //     }
+        //     printf("\n");
+        // }
     }
+
     if (rank == 0){
         for (k = 0; k < K; k ++){
             for (m = 0; m < num; m++){
                 if ((m == num - 1) && (k >= 1)){
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank + 1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank + 1, k, MPI_COMM_WORLD, &status);
+                    // printf("I, rank = %d receive from rank = %d number %f for pos k =%d m = %d\n ", rank, rank + 1, tmp, k, m + 1);
                     u[k * M + m + 1] = tmp;
                 }
                 u = sceme_realization(u, k, m);
                 if (m == num - 1){
                     tmp = u[k * M + m];
-                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv);
+                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank + 1, k, MPI_COMM_WORLD, &recv);
+                    // printf("I, rank = %d send to rank = %d number %f for pos k =%d m = %d\n ", rank, rank + 1, tmp, k, m);
                 }
             }
         }
-        MPI_Send(u, K * M, MPI_DOUBLE, commsize - 1, 0, MPI_COMM_WORLD);
+        MPI_Send(u, K * M, MPI_DOUBLE, commsize - 1, 1, MPI_COMM_WORLD);
     }
     if ((rank != commsize - 1) && (rank != 0)){
         int x_end = num * (rank + 1);
         for (k = 0; k < K; k ++){
             for (m = rank * num; m < x_end; m++){
                 if ((m == x_end - 1) && (k >= 1)){
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank + 1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank + 1, k, MPI_COMM_WORLD, &status);
                     u[k * M + m + 1] = tmp;
+                    // printf("I, rank = %d receive from rank = %d number %f for pos k =%d m = %d\n ", rank, rank + 1, tmp, k, m + 1);
                 }
                 if (m == num * rank){
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank - 1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank - 1, k, MPI_COMM_WORLD, &status);
                     u[k * M + m - 1] = tmp;
+                    // printf("I, rank = %d receive from rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k, m - 1);
                 }
+
                 u = sceme_realization(u, k, m);
+
                 if (m == x_end - 1){
                     tmp = u[k * M + m];
-                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, &recv);
+                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank + 1, k, MPI_COMM_WORLD, &recv);
+                    // printf("I, rank = %d send to rank = %d number %f for pos k =%d m = %d\n ", rank, rank + 1, tmp, k, m);
                 }
-                if (m == num * rank){
-                    tmp = u[k * M + m];
-                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, &recv);
+                if ((m == num * rank) && (k != K - 1)){
+                    tmp = u[(k + 1) * M + m];
+                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank - 1, k + 1, MPI_COMM_WORLD, &recv);
+                    // printf("I, rank = %d send to rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k + 1, m);
                 }
             }
         } 
-        sleep(rank);
-        printf("HERE, rank = %d\n", rank);
-        for (k = 0; k < K; k++){
-            for (m = 0; m < M; m ++){
-                printf("%f ", u[k * M + m]);
-            }
-            printf("\n");
-        }
-        // MPI_Send(u, K * M, MPI_DOUBLE, commsize - 1, 0, MPI_COMM_WORLD); 
 
-        
-        MPI_Send(u, K * num, MPI_DOUBLE, commsize - 1, 0, MPI_COMM_WORLD);     
+        MPI_Send(u, K * M, MPI_DOUBLE, commsize - 1, 1, MPI_COMM_WORLD);     
 
     }
     free(u);
