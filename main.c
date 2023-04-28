@@ -23,6 +23,7 @@ int main( int argc, char **argv ){
     int K = (int)(t_max/t_step);
     int M = (int)(x_max/x_step);
     double tmp = 0;
+    double time_start, time_finish;
 
     output = fopen("output.csv", "w");
 
@@ -41,6 +42,9 @@ int main( int argc, char **argv ){
     int num = M / commsize;
     MPI_Status status;
     MPI_Request recv;
+
+    time_start = MPI_Wtime();
+
     if (rank == commsize - 1){
         for (k = 0; k < K - 1; k ++){
             for (m = rank * num; m < M; m++){
@@ -74,6 +78,8 @@ int main( int argc, char **argv ){
 
             free(uTMP);
         }
+        time_finish = MPI_Wtime();
+        printf("start = %f, finish= %f, total = %f\n", time_start, time_finish, time_finish - time_start);
 
         fprintf(output, "t\tx\tu\n");
         for (i = 0; i < K; i++){
