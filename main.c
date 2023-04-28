@@ -48,18 +48,22 @@ int main( int argc, char **argv ){
     if (rank == commsize - 1){
         for (k = 0; k < K - 1; k ++){
             for (m = rank * num; m < M; m++){
-                if (m == num * rank){
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, rank - 1, k, MPI_COMM_WORLD, &status);
-                    // printf("I, rank = %d receive from rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k, m - 1);
-                    u[k * M + m - 1] = tmp;
-                }
+                if (commsize > 1){
+                    if (m == num * rank){
+                        MPI_Recv(&tmp, 1, MPI_DOUBLE, rank - 1, k, MPI_COMM_WORLD, &status);
+                        // printf("I, rank = %d receive from rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k, m - 1);
+                        u[k * M + m - 1] = tmp;
+                    }
 
-                u = sceme_realization(u, k, m);
+                    u = sceme_realization(u, k, m);
 
-                if ((m == num * rank)&&(k != K - 1)){
-                    tmp = u[(k + 1) * M + m];
-                    MPI_Isend(&tmp, 1, MPI_DOUBLE, rank - 1, k + 1, MPI_COMM_WORLD, &recv);
-                    // printf("I, rank = %d send to rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k + 1, m);
+                    if ((m == num * rank)&&(k != K - 1)){
+                        tmp = u[(k + 1) * M + m];
+                        MPI_Isend(&tmp, 1, MPI_DOUBLE, rank - 1, k + 1, MPI_COMM_WORLD, &recv);
+                        // printf("I, rank = %d send to rank = %d number %f for pos k =%d m = %d\n ", rank, rank - 1, tmp, k + 1, m);
+                    }
+                } else{
+                    u = sceme_realization(u, k, m);
                 }
             }
         }  
@@ -96,7 +100,7 @@ int main( int argc, char **argv ){
         // }
     }
 
-    if (rank == 0){
+    if ((rank == 0) && (commsize > 1)){
         for (k = 0; k < K; k ++){
             for (m = 0; m < num; m++){
                 if ((m == num - 1) && (k >= 1)){
