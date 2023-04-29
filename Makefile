@@ -5,7 +5,7 @@ build: make.o func.o
 	mv task build
 
 plot: build
-	cp plot.ipynb build
+	cp plot.py build
 	cp make_task build
 	cp time.csv build
 	

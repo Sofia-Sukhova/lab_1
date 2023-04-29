@@ -1,7 +1,7 @@
 NUM = 15
 
 all: output.csv task
-	python plot.ipynb
+	python plot.py
 
 output.csv: 
 	export TMPDIR=/tmp
