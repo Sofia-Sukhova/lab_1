@@ -18,3 +18,4 @@ func.o: func.c
 
 clean:
 	rm -r build
+	rm func.o
