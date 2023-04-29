@@ -84,6 +84,7 @@ int main( int argc, char **argv ){
         printf("start = %f, finish= %f, total = %f\n", time_start, time_finish, time_finish - time_start);
 
         fprintf(output, "t\tx\tu\n");
+        fprintf(output, "%d\t%d\t%d\n", K, M, 0);
         for (i = 0; i < K; i++){
             for (j = 0; j < M ; j++){
                 fprintf(output, "%lf\t%lf\t%lf\n", i * t_step, x_step * j, u[i * M  + j]);

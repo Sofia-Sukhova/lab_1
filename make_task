@@ -1,0 +1,11 @@
+NUM = 15
+
+all: output.csv task
+	python plot.ipynb
+
+output.csv: 
+	export TMPDIR=/tmp
+	mpirun -n $(NUM) -oversubscribe ./task
+
+clean:
+	rm *
