@@ -32,8 +32,8 @@ int main( int argc, char **argv ){
     MPI_Comm_size(MPI_COMM_WORLD, &commsize);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
-    double *u;
-    u = calloc(K * M, sizeof(double));
+    double *u = NULL;
+    u = calloc(K * M + 10, sizeof(double));
 
     for (m = 0; m < M; m++){
         u[m] = fi(m * x_step);
@@ -70,7 +70,7 @@ int main( int argc, char **argv ){
 
         // match all matrix together and put to the file
         for(i = 0; i < commsize - 1; i++){
-            double *uTMP = calloc(K * M, sizeof(double));
+            double *uTMP = calloc(K * M + 10, sizeof(double));
 
             MPI_Recv(uTMP, K * M, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, &status);
 
@@ -96,7 +96,7 @@ int main( int argc, char **argv ){
     }
 
     if ((rank == 0) && (commsize > 1)){
-        for (k = 0; k < K; k ++){
+        for (k = 0; k < K - 1; k ++){
             for (m = 0; m < num; m++){
                 if ((m == num - 1) && (k >= 1)){
                     MPI_Recv(&tmp, 1, MPI_DOUBLE, rank + 1, k, MPI_COMM_WORLD, &status);
@@ -113,7 +113,7 @@ int main( int argc, char **argv ){
     }
     if ((rank != commsize - 1) && (rank != 0)){
         int x_end = num * (rank + 1);
-        for (k = 0; k < K; k ++){
+        for (k = 0; k < K - 1; k ++){
             for (m = rank * num; m < x_end; m++){
                 if ((m == x_end - 1) && (k >= 1)){
                     MPI_Recv(&tmp, 1, MPI_DOUBLE, rank + 1, k, MPI_COMM_WORLD, &status);
