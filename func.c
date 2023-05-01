@@ -1,6 +1,6 @@
 #include <stdio.h>
 double t_max = 10;
-double x_max = 15;
+double x_max = 20;
 double t_step = 0.1;
 double x_step = 0.1;
 

@@ -64,7 +64,9 @@ int main( int argc, char **argv ){
                     u = sceme_realization(u, k, m);
                 }
             }
-        }  
+        }
+        
+        time_finish = MPI_Wtime();
 
         // match all matrix together and put to the file
         for(i = 0; i < commsize - 1; i++){
@@ -80,7 +82,7 @@ int main( int argc, char **argv ){
 
             free(uTMP);
         }
-        time_finish = MPI_Wtime();
+
         printf("start = %f, finish= %f, total = %f\n", time_start, time_finish, time_finish - time_start);
 
         fprintf(output, "t\tx\tu\n");

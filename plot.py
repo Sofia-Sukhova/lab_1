@@ -65,7 +65,7 @@ n = dataframe.iloc[:, 0].to_numpy()
 t = dataframe.iloc[:, 1].to_numpy()
 
 
-s = 1 / t
+s = t[0] / t
 
 fig = plt.figure(figsize = [13.5, 5], dpi = 100)
 fig = plt.plot(n, s, '-r', ms = 1)
